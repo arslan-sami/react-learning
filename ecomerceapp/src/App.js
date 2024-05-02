@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl, InputLabel, Checkbox, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useMediaQuery, useTheme } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl, InputLabel, Checkbox, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useMediaQuery, useTheme, IconButton } from '@material-ui/core';
+import EditIcon from '@material-ui/icons/Edit';
 
 function App() {
   const theme = useTheme();
@@ -27,6 +28,8 @@ function App() {
   const [imageFile, setImageFile] = useState(null);
   const [imageDetail, setImageDetail] = useState('');
   const [paid, setPaid] = useState(false); 
+  const [editIndex, setEditIndex] = useState(null);
+
 
   const handleAddIncome = () => {
     setOpenIncomeDialog(true);
@@ -74,34 +77,100 @@ function App() {
     setAdditionalExpenseType(event.target.value);
   };
 
+  const handleEdit = (index) => {
+    setEditIndex(index);
+    setOpenExpenseDialog(true)
+    // Populate the form fields with the data of the row to be edited
+    const itemToEdit = selectedTable === 'income' ? incomeDetails[index] : expenseDetails[index];
+    if (selectedTable === 'income') {
+      setIncomeTitle(itemToEdit.title);
+      setIncomeSource(itemToEdit.source);
+      setIncomeAmount(itemToEdit.amount);
+      setIncomeDetail(itemToEdit.detail);
+    } else {
+      setExpenseTitle(itemToEdit.title);
+      setExpenseAmount(itemToEdit.amount);
+      setExpenseDetail(itemToEdit.detail);
+      setExpenseType(itemToEdit.type);
+      setImageDetail(itemToEdit.imageDetail);
+      setPaid(itemToEdit.paid);
+    }
+  };
+  
+
   const handleSaveIncome = () => {
-    const amount = Number(incomeAmount);
-    const currentTime = new Date().toLocaleString();
-    setTotalIncome(totalIncome + amount);
-    setBalance(balance + amount);
-    setIncomeDetails([...incomeDetails, { source: incomeSource, title: incomeTitle, amount: incomeAmount, detail: incomeDetail, time: currentTime }]);
+    // If editIndex is not null, update the existing row data
+    if (editIndex !== null) {
+      const updatedIncomeDetails = [...incomeDetails];
+      updatedIncomeDetails[editIndex] = {
+        source: incomeSource,
+        title: incomeTitle,
+        amount: incomeAmount,
+        detail: incomeDetail,
+        time: new Date().toLocaleString()
+      };
+      setIncomeDetails(updatedIncomeDetails);
+      setEditIndex(null);
+    } else {
+      // Otherwise, add a new row
+      const amount = Number(incomeAmount);
+      const currentTime = new Date().toLocaleString();
+      setTotalIncome(totalIncome + amount);
+      setBalance(balance + amount);
+      setIncomeDetails([...incomeDetails, { source: incomeSource, title: incomeTitle, amount: incomeAmount, detail: incomeDetail, time: currentTime }]);
+    }
+  
+    // Reset form fields and dialog state
     setOpenIncomeDialog(false);
     setIncomeSource('');
     setIncomeAmount('');
     setIncomeTitle('');
     setIncomeDetail('');
   };
+  
 
   const handleSaveExpense = () => {
-    const amount = Number(expenseAmount);
-    const currentTime = new Date().toLocaleString();
-    const paidAmount = paid ? amount : 0; 
-    setTotalExpense(totalExpense + paidAmount);
-    setBalance(balance - paidAmount);
-    setExpenseDetails([...expenseDetails, { title: expenseTitle, detail: expenseDetail, amount: expenseAmount, type: expenseType, image: imageFile, imageDetail: imageDetail, time: currentTime, paid: paid }]);
+    // If editIndex is not null, update the existing row data
+    if (editIndex !== null) {
+      const updatedExpenseDetails = [...expenseDetails];
+      const amount = Number(expenseAmount);
+      const currentTime = new Date().toLocaleString();
+      const paidAmount = paid ? amount : 0;
+      const prevPaidAmount = updatedExpenseDetails[editIndex].paid ? Number(updatedExpenseDetails[editIndex].amount) : 0;
+      setTotalExpense(totalExpense - prevPaidAmount + paidAmount);
+      setBalance(balance + prevPaidAmount - paidAmount);
+      updatedExpenseDetails[editIndex] = {
+        title: expenseTitle,
+        amount: expenseAmount,
+        detail: expenseDetail,
+        type: expenseType,
+        image: imageFile,
+        imageDetail: imageDetail,
+        time: currentTime,
+        paid: paid
+      };
+      setExpenseDetails(updatedExpenseDetails);
+      setEditIndex(null);
+    } else {
+      // Otherwise, add a new row
+      const amount = Number(expenseAmount);
+      const currentTime = new Date().toLocaleString();
+      const paidAmount = paid ? amount : 0;
+      setTotalExpense(totalExpense + paidAmount);
+      setBalance(balance - paidAmount);
+      setExpenseDetails([...expenseDetails, { title: expenseTitle, detail: expenseDetail, amount: expenseAmount, type: expenseType, image: imageFile, imageDetail: imageDetail, time: currentTime, paid: paid }]);
+    }
+  
+    // Reset form fields and dialog state
     setOpenExpenseDialog(false);
     setExpenseTitle('');
     setExpenseAmount('');
     setExpenseType('');
     setImageFile(null);
     setImageDetail('');
-    setOpenImageDialog(false); 
+    setOpenImageDialog(false);
   };
+  
 
   const handleAddMoreType = () => {
     if (additionalExpenseType.trim() !== '') {
@@ -142,29 +211,34 @@ function App() {
         <Button variant="contained" color="secondary" onClick={handleAddExpense} style={{ marginLeft: '10px' }}>Add Expense</Button>
       </div>
       <div style={{display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between'}}>
-        <div style={{textAlign: 'center', marginBottom: isMobile ? '20px' : '0'}}>
-          <h1>Balance:</h1>
+        <div style={{textAlign: 'center', width: '40%', marginBottom: isMobile ? '20px' : '0'}}>
           <h2>{balance}</h2>
+          <h1>Balance</h1>
         </div>  
-        <div style={{textAlign: 'center'}}>
-          <h1>Total Expense:</h1>
+        <div style={{textAlign: 'center', width: '50%'}}>
           <h2>{totalExpense}</h2>
+          <h1>Total Expense</h1>
         </div>
       </div>
+
       
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-        <FormControl variant="outlined">
+        <FormControl variant="outlined" style={{ minWidth: '0px' }}>
           <Select
             labelId="table-select-label"
             value={selectedTable}
             onChange={handleTableSelectChange}
+            style={{ fontSize: '12px' }} // Adjust the font size here
           >
-            <MenuItem value="combined">Combined</MenuItem>
-            <MenuItem value="income">Income</MenuItem>
-            <MenuItem value="expense">Expense</MenuItem>
+            <MenuItem style={{ fontSize: '12px' }} value="combined">Combined</MenuItem>
+            <MenuItem style={{ fontSize: '12px' }} value="income">Income</MenuItem>
+            <MenuItem style={{ fontSize: '12px' }} value="expense">Expense</MenuItem>
           </Select>
         </FormControl>
       </div>
+
+
+
 
       <div style={{ display: 'flex', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
         {selectedTable === 'combined' && (
@@ -174,12 +248,15 @@ function App() {
                 <TableRow>
                   <TableCell>Title</TableCell>
                   <TableCell>Source</TableCell>
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Detail</TableCell>
+                  <TableCell>Payment Status</TableCell>
+                  
+                  {/* <TableCell>Detail</TableCell> */}
                   <TableCell>Type</TableCell>
                   <TableCell>Date Time</TableCell>
-                  <TableCell>Image</TableCell>
-                  <TableCell>Payment</TableCell> 
+                  {/* <TableCell>Image</TableCell> */}
+                  <TableCell>Amount</TableCell>
+                  <TableCell>Edit</TableCell>
+                   
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -187,19 +264,39 @@ function App() {
                   <TableRow key={index}>
                     <TableCell>{data.title}</TableCell>
                     <TableCell>{data.source}</TableCell>
-                    <TableCell>{data.amount}</TableCell>
-                    <TableCell>{data.detail}</TableCell>
+                    {/* <TableCell>{data.paid ? 'Paid' : 'Not Paid'}</TableCell>  */}
+                    <TableCell>
+                      {data.paid ? (
+                        <input
+                          type="checkbox"
+                          checked={true} 
+                          // disabled 
+                        />
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={false} 
+                          onChange={(e) => handlePaidChange(e, index)}
+                        />
+                      )}
+                    </TableCell>
+                    {/* <TableCell>{data.detail}</TableCell> */}
                     <TableCell>{data.type}</TableCell>
                     <TableCell>{data.time}</TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       {data.image && (
                         <div>
                           <img src={URL.createObjectURL(data.image)} alt="Expense" style={{ width: '100px' }} />
                           <p>{data.imageDetail}</p>
                         </div>
                       )}
+                    </TableCell> */}
+                    <TableCell>{data.amount}</TableCell>
+                    <TableCell>
+                    <IconButton onClick={() => handleEdit(index)}>
+                      <EditIcon />
+                    </IconButton>
                     </TableCell>
-                    <TableCell>{data.paid ? 'Paid' : 'Not Paid'}</TableCell> 
                   </TableRow>
                 ))}
               </TableBody>
@@ -217,6 +314,7 @@ function App() {
                   <TableCell>Income Amount</TableCell>
                   <TableCell>Income Detail</TableCell>
                   <TableCell>Income Time</TableCell>
+                  <TableCell>Edit</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -227,6 +325,9 @@ function App() {
                     <TableCell>{income.amount}</TableCell>
                     <TableCell>{income.detail}</TableCell>
                     <TableCell>{income.time}</TableCell>
+                    <IconButton onClick={() => handleEdit(index)}>
+                      <EditIcon />
+                    </IconButton>
                   </TableRow>
                 ))}
               </TableBody>
@@ -240,31 +341,52 @@ function App() {
               <TableHead>
                 <TableRow>
                   <TableCell>Expense Title</TableCell>
-                  <TableCell>Expense Amount</TableCell>
-                  <TableCell>Expense Detail</TableCell>
+                  <TableCell>Payment Status</TableCell>
+                  {/* <TableCell>Expense Detail</TableCell> */}
                   <TableCell>Expense Type</TableCell>
                   <TableCell>Expense Time</TableCell>
-                  <TableCell>Image</TableCell>
-                  <TableCell>Payment</TableCell>
+                  <TableCell>Expense Amount</TableCell>
+                  <TableCell>Edit</TableCell>
+                  {/* <TableCell>Image</TableCell> */}
+                  
                 </TableRow>
               </TableHead>
               <TableBody>
                 {expenseDetails.map((expense, index) => (
                   <TableRow key={index}>
                     <TableCell>{expense.title}</TableCell>
-                    <TableCell>{expense.amount}</TableCell>
-                    <TableCell>{expense.detail}</TableCell>
+                    <TableCell>
+                      {expense.paid ? (
+                        <input
+                          type="checkbox"
+                          checked={true} 
+                          // disabled 
+                        />
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={false} 
+                          onChange={(e) => handlePaidChange(e, index)}
+                        />
+                      )}
+                    </TableCell>
+                    {/* <TableCell>{expense.detail}</TableCell> */}
                     <TableCell>{expense.type}</TableCell>
                     <TableCell>{expense.time}</TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       {expense.image && (
                         <div>
                           <img src={URL.createObjectURL(expense.image)} alt="Expense" style={{ width: '100px' }} />
                           <p>{expense.imageDetail}</p>
                         </div>
                       )}
-                    </TableCell>
-                    <TableCell>{expense.paid ? 'Paid' : 'Not Paid'}</TableCell> {/* Display Payment status */}
+                    </TableCell> */}
+                    {/* <TableCell>{expense.paid ? 'Paid' : 'Not Paid'}</TableCell> */}
+                    <TableCell>{expense.amount}</TableCell>
+                    <IconButton onClick={() => handleEdit(index)}>
+                      <EditIcon />
+                    </IconButton>
+                    
                   </TableRow>
                 ))}
               </TableBody>
