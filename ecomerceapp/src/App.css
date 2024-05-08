@@ -1,0 +1,48 @@
+/* .table-wrapper {
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: center;
+    margin-top: 20px; 
+    margin-bottom: 20px;
+  }
+  
+  .table-container {
+    width: calc(50% - 20px); 
+    margin-right: 20px; 
+    margin-bottom: 20px;
+  }
+   */
+
+.table-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.table-container {
+    margin: 20px;
+}
+
+.hover-date {
+    position: relative;
+    cursor: pointer;
+}
+
+.hover-date .hover-time {
+    display: none;
+    position: absolute;
+    top: 65%;
+    left: 10%;
+    padding-top: 5px;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hover-date:hover .hover-time {
+    display: inline;
+}
+
+.input-field {
+    margin-bottom: 10px;
+}

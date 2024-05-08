@@ -1,540 +1,424 @@
-import React, { useState } from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Select, MenuItem, FormControl, InputLabel, Checkbox, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useMediaQuery, useTheme, IconButton } from '@material-ui/core';
+import React, { useState, useEffect } from 'react';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Checkbox,
+  FormControlLabel,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Select,
+  MenuItem,
+  IconButton, // Import IconButton component
+  Menu, // Import Menu component
+} from '@material-ui/core';
+import SettingsIcon from '@material-ui/icons/Settings'; // Import settings icon
 import EditIcon from '@material-ui/icons/Edit';
 
-function App() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+import './App.css';
 
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [totalExpense, setTotalExpense] = useState(0);
-  const [balance, setBalance] = useState(0);
-  const [openIncomeDialog, setOpenIncomeDialog] = useState(false);
-  const [openExpenseDialog, setOpenExpenseDialog] = useState(false);
-  const [openImageDialog, setOpenImageDialog] = useState(false);
-  const [incomeSource, setIncomeSource] = useState('');
-  const [incomeAmount, setIncomeAmount] = useState('');
-  const [incomeTitle, setIncomeTitle] = useState('');
-  const [incomeDetail, setIncomeDetail] = useState('');
-  const [expenseTitle, setExpenseTitle] = useState('');
-  const [expenseAmount, setExpenseAmount] = useState('');
-  const [expenseType, setExpenseType] = useState(''); 
-  const [additionalExpenseType, setAdditionalExpenseType] = useState(''); 
-  const [incomeDetails, setIncomeDetails] = useState([]);
-  const [expenseDetails, setExpenseDetails] = useState([]);
-  const [expenseDetail, setExpenseDetail] = useState('');
-  const [expenseTypeOptions, setExpenseTypeOptions] = useState(['Utility Bills', 'Shopping', 'Foods']); 
-  const [selectedTable, setSelectedTable] = useState('combined');
-  const [imageFile, setImageFile] = useState(null);
-  const [imageDetail, setImageDetail] = useState('');
-  const [paid, setPaid] = useState(false); 
-  const [editIndex, setEditIndex] = useState(null);
+const IncomeTable = ({ data, handleEdit }) => (
+  <div className="table-container">
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableCell>Title</TableCell>
+          <TableCell>Source</TableCell>
+          {/* <TableCell>Detail</TableCell> */}
+          
+          <TableCell>Date</TableCell>
+          <TableCell>Amount</TableCell>
+          <TableCell>Edit</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {data.map((row, index) => (
+          <TableRow key={index}>
+            <TableCell>{row.incomeTitle}</TableCell>
+            <TableCell>{row.SourceOfIncome}</TableCell>
+            {/* <TableCell>{row.detail}</TableCell> */}
+            <TableCell>{row.IncomeAmount}</TableCell>
+            <TableCell className="hover-date">
+              {new Date(row.dateTime).toLocaleDateString()}
+              <span className="hover-time">
+                {new Date(row.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </TableCell>
+            <TableCell>{row.IncomeAmount}</TableCell>
+            <TableCell>
+              <IconButton onClick={() => handleEdit(index)} color="primary">
+                <EditIcon />
+              </IconButton>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);
 
 
-  const handleAddIncome = () => {
-    setOpenIncomeDialog(true);
+const ExpenseTable = ({ data, handleEdit }) => (
+  <div className="table-container">
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableCell>Title</TableCell>
+          <TableCell>Status</TableCell>
+          <TableCell>Type</TableCell>
+          {/* <TableCell>Detail</TableCell> */}
+          <TableCell>Date</TableCell>
+          {/* <TableCell>Image</TableCell> */}
+          <TableCell>Amount</TableCell>
+          <TableCell>Edit</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {data.map((row, index) => (
+          <TableRow key={index}>
+            <TableCell>{row.expTitle}</TableCell>
+            <TableCell>
+              <Checkbox checked={row.status} color="primary" disable/>
+            </TableCell>
+            <TableCell>{row.expType}</TableCell>
+            {/* <TableCell>{row.expDetail}</TableCell> */}
+            <TableCell className="hover-date">
+              {new Date(row.dateTime).toLocaleDateString()}
+              <span className="hover-time">
+                {new Date(row.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </TableCell>
+
+            
+            {/* <TableCell>
+              {row.image && <img src={row.image} alt="Uploaded" style={{ width: '80px', height: '100px' }} />}
+            </TableCell> */}
+            <TableCell>{row.expAmount}</TableCell>
+            <TableCell>
+              <IconButton onClick={() => handleEdit(index)} color="primary">
+                <EditIcon />
+              </IconButton>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);
+
+const App = () => {
+  const [open, setOpen] = useState(false);
+  const [data, setData] = useState([]);
+  const [totalIncomeAmount, setTotalIncomeAmount] = useState(0);
+  const [totalexpAmount, setTotalexpAmount] = useState(0);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [incomeTitle, setincomeTitle] = useState('');
+  const [SourceOfIncome, setSourceOfIncome] = useState('');
+  const [IncomeAmount, setIncomeAmount] = useState('');
+  const [detail, setDetail] = useState('');
+  const [expTitle, setexpTitle] = useState('');
+  const [expAmount, setexpAmount] = useState('');
+  const [expDetail, setexpDetail] = useState('');
+  const [expType, setexpType] = useState('');
+  const [status, setstatus] = useState(false);
+  const [isIncome, setIsIncome] = useState(false);
+  const [isCombined, setIsCombined] = useState(false);
+  const [image, setImage] = useState(null);
+  // Menu State for view options
+  const [anchorEl, setAnchorEl] = useState(null);
+  // Nested menu state for view options
+  const [nestedAnchorEl, setNestedAnchorEl] = useState(null);
+
+  useEffect(() => {
+    let total = 0;
+    let num = 0;
+    data.forEach((item) => {
+      if (!isNaN(parseFloat(item.IncomeAmount)))
+        total += parseFloat(item.IncomeAmount);
+      if (!isNaN(parseFloat(item.expAmount)))
+        num += parseFloat(item.expAmount);
+    });
+    setTotalIncomeAmount(total - num);
+    setTotalexpAmount(num);
+  }, [data]);
+
+  const handleSave = () => {
+    const newData = {
+      incomeTitle,
+      SourceOfIncome,
+      IncomeAmount: parseFloat(IncomeAmount),
+      detail,
+      expTitle,
+      expAmount: parseFloat(expAmount),
+      expDetail,
+      expType,
+      status,
+      image,
+      dateTime: new Date().toLocaleString(),
+    };
+    if (editingIndex !== null) {
+      const updatedData = [...data];
+      setTotalIncomeAmount(totalIncomeAmount + parseFloat(IncomeAmount) - data[editingIndex].IncomeAmount);
+      setTotalexpAmount(totalexpAmount - data[editingIndex].expAmount + parseFloat(expAmount));
+      updatedData[editingIndex] = newData;
+      setData(updatedData);
+      setEditingIndex(null);
+    } else {
+      setData([...data, newData]);
+      setTotalIncomeAmount(totalIncomeAmount + parseFloat(IncomeAmount));
+      setTotalexpAmount(totalexpAmount + parseFloat(expAmount));
+    }
+    handleClose();
   };
 
-  const handleAddExpense = () => {
-    setOpenExpenseDialog(true);
-    setPaid(false);
-  };
-
-  const handleIncomeSourceChange = (event) => {
-    setIncomeSource(event.target.value);
-  };
-
-  const handleIncomeAmountChange = (event) => {
-    setIncomeAmount(event.target.value);
-  };
-
-  const handleIncomeTitleChange = (event) => {
-    setIncomeTitle(event.target.value);
-  };
-
-  const handleIncomeDetailChange = (event) => {
-    setIncomeDetail(event.target.value);
-  };
-
-  const handleExpenseTitleChange = (event) => {
-    setExpenseTitle(event.target.value);
-  };
-
-  const handleExpenseAmountChange = (event) => {
-    setExpenseAmount(event.target.value);
-  };
-
-  const handleExpenseDetailChange = (event) => {
-    setExpenseDetail(event.target.value);
-  };
-  
-  const handleExpenseTypeChange = (event) => {
-    setExpenseType(event.target.value);
-    setOpenImageDialog(true); 
-  };
-
-  const handleAdditionalExpenseTypeChange = (event) => {
-    setAdditionalExpenseType(event.target.value);
+  const handleClose = () => {
+    setOpen(false);
+    setincomeTitle('');
+    setSourceOfIncome('');
+    setIncomeAmount('');
+    setDetail('');
+    setexpTitle('');
+    setexpAmount('');
+    setexpDetail('');
+    setexpType('');
+    setstatus(false);
+    setImage(null);
   };
 
   const handleEdit = (index) => {
-    setEditIndex(index);
-    setOpenExpenseDialog(true)
-    // Populate the form fields with the data of the row to be edited
-    const itemToEdit = selectedTable === 'income' ? incomeDetails[index] : expenseDetails[index];
-    if (selectedTable === 'income') {
-      setIncomeTitle(itemToEdit.title);
-      setIncomeSource(itemToEdit.source);
-      setIncomeAmount(itemToEdit.amount);
-      setIncomeDetail(itemToEdit.detail);
-    } else {
-      setExpenseTitle(itemToEdit.title);
-      setExpenseAmount(itemToEdit.amount);
-      setExpenseDetail(itemToEdit.detail);
-      setExpenseType(itemToEdit.type);
-      setImageDetail(itemToEdit.imageDetail);
-      setPaid(itemToEdit.paid);
-    }
+    const rowData = data[index];
+    setincomeTitle(rowData.incomeTitle);
+    setSourceOfIncome(rowData.SourceOfIncome);
+    setIncomeAmount(rowData.IncomeAmount.toString());
+    setDetail(rowData.detail);
+    setexpTitle(rowData.expTitle);
+    setexpAmount(rowData.expAmount.toString());
+    setexpDetail(rowData.expDetail);
+    setexpType(rowData.expType);
+    setstatus(rowData.status);
+    setImage(rowData.image);
+    setEditingIndex(index);
+    setOpen(true);
   };
-  
 
-  const handleSaveIncome = () => {
-    // If editIndex is not null, update the existing row data
-    if (editIndex !== null) {
-      const updatedIncomeDetails = [...incomeDetails];
-      updatedIncomeDetails[editIndex] = {
-        source: incomeSource,
-        title: incomeTitle,
-        amount: incomeAmount,
-        detail: incomeDetail,
-        time: new Date().toLocaleString()
-      };
-      setIncomeDetails(updatedIncomeDetails);
-      setEditIndex(null);
-    } else {
-      // Otherwise, add a new row
-      const amount = Number(incomeAmount);
-      const currentTime = new Date().toLocaleString();
-      setTotalIncome(totalIncome + amount);
-      setBalance(balance + amount);
-      setIncomeDetails([...incomeDetails, { source: incomeSource, title: incomeTitle, amount: incomeAmount, detail: incomeDetail, time: currentTime }]);
-    }
-  
-    // Reset form fields and dialog state
-    setOpenIncomeDialog(false);
-    setIncomeSource('');
-    setIncomeAmount('');
-    setIncomeTitle('');
-    setIncomeDetail('');
-  };
-  
-
-  const handleSaveExpense = () => {
-    // If editIndex is not null, update the existing row data
-    if (editIndex !== null) {
-      const updatedExpenseDetails = [...expenseDetails];
-      const amount = Number(expenseAmount);
-      const currentTime = new Date().toLocaleString();
-      const paidAmount = paid ? amount : 0;
-      const prevPaidAmount = updatedExpenseDetails[editIndex].paid ? Number(updatedExpenseDetails[editIndex].amount) : 0;
-      setTotalExpense(totalExpense - prevPaidAmount + paidAmount);
-      setBalance(balance + prevPaidAmount - paidAmount);
-      updatedExpenseDetails[editIndex] = {
-        title: expenseTitle,
-        amount: expenseAmount,
-        detail: expenseDetail,
-        type: expenseType,
-        image: imageFile,
-        imageDetail: imageDetail,
-        time: currentTime,
-        paid: paid
-      };
-      setExpenseDetails(updatedExpenseDetails);
-      setEditIndex(null);
-    } else {
-      // Otherwise, add a new row
-      const amount = Number(expenseAmount);
-      const currentTime = new Date().toLocaleString();
-      const paidAmount = paid ? amount : 0;
-      setTotalExpense(totalExpense + paidAmount);
-      setBalance(balance - paidAmount);
-      setExpenseDetails([...expenseDetails, { title: expenseTitle, detail: expenseDetail, amount: expenseAmount, type: expenseType, image: imageFile, imageDetail: imageDetail, time: currentTime, paid: paid }]);
-    }
-  
-    // Reset form fields and dialog state
-    setOpenExpenseDialog(false);
-    setExpenseTitle('');
-    setExpenseAmount('');
-    setExpenseType('');
-    setImageFile(null);
-    setImageDetail('');
-    setOpenImageDialog(false);
-  };
-  
-
-  const handleAddMoreType = () => {
-    if (additionalExpenseType.trim() !== '') {
-      setExpenseTypeOptions([...expenseTypeOptions, additionalExpenseType]);
-      setAdditionalExpenseType('');
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const fileSize = file.size / 1024 / 1024; // in MB
+      if (fileSize <= 2) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImage(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Notify user about file size limit
+        alert("File size exceeds 2 MB limit.");
+      }
     }
   };
 
-  const handleTableSelectChange = (event) => {
-    setSelectedTable(event.target.value);
+
+  // Open view options menu
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif']; 
-    const maxFileSize = 2 * 1024 * 1024; 
-
-    if (file && allowedTypes.includes(file.type) && file.size <= maxFileSize) {
-      setImageFile(file);
-    } else {
-      alert("Please upload a valid image file (JPEG, PNG, or GIF) with a maximum size of 2MB.");
-      event.target.value = null; 
-    }
+  // Close view options menu
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
-  const handleImageDetailChange = (event) => {
-    setImageDetail(event.target.value);
+  // Close nested view options menu
+  const handleNestedMenuClose = () => {
+    setNestedAnchorEl(null);
   };
 
-  const handlePaidChange = (event) => {
-    setPaid(event.target.checked);
+
+  // Open nested view options menu
+  const handleNestedMenuOpen = (event) => {
+    setNestedAnchorEl(event.currentTarget);
   };
 
   return (
-    <div style={{ margin: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px' }}>
-        <Button variant="contained" color="primary" onClick={handleAddIncome}>Add Income</Button>
-        <Button variant="contained" color="secondary" onClick={handleAddExpense} style={{ marginLeft: '10px' }}>Add Expense</Button>
+    <div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+        <Button variant="contained" color="primary" style={{ margin: '10px 10px' }} onClick={() => { setOpen(true); setIsIncome(false); }}>Add Expense</Button>
+        <Button variant="contained" color="secondary" style={{ margin: '10px 10px' }} onClick={() => { setOpen(true); setIsIncome(true); }}>Add Income</Button>
+        {/* Settings icon and dropdown */}
+        <IconButton onClick={handleMenuOpen}>
+          <SettingsIcon />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleNestedMenuOpen}>View</MenuItem>
+        </Menu>
+
+        {/* Nested menu for view options */}
+        <Menu
+          anchorEl={nestedAnchorEl}
+          open={Boolean(nestedAnchorEl)}
+          onClose={handleNestedMenuClose}
+        >
+          <MenuItem onClick={() => { setIsCombined(true); handleNestedMenuClose(); }}>Combined</MenuItem>
+          <MenuItem onClick={() => { setIsCombined(false); handleNestedMenuClose(); }}>Separated</MenuItem>
+        </Menu>
       </div>
-      <div style={{display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between'}}>
-        <div style={{textAlign: 'center', width: '40%', marginBottom: isMobile ? '20px' : '0'}}>
-          <h2>{balance}</h2>
-          <h1>Balance</h1>
-        </div>  
-        <div style={{textAlign: 'center', width: '50%'}}>
-          <h2>{totalExpense}</h2>
-          <h1>Total Expense</h1>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '50px' }}>
+        <div style={{ textAlign: 'center', width: '50%' }}>
+          <span style={{ fontSize: '1.2em' }}>{totalIncomeAmount}</span>
+          <h1 style={{ fontSize: '22px' }}>Balance</h1>
+        </div>
+        <div style={{ textAlign: 'center', width: '50%' }}>
+          <span style={{ fontSize: '1.2em' }}>{totalexpAmount}</span>
+          <h1 style={{ fontSize: '22px' }}>Total Expense</h1>
         </div>
       </div>
 
-      
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-        <FormControl variant="outlined" style={{ minWidth: '0px' }}>
-          <Select
-            labelId="table-select-label"
-            value={selectedTable}
-            onChange={handleTableSelectChange}
-            style={{ fontSize: '12px' }} // Adjust the font size here
-          >
-            <MenuItem style={{ fontSize: '12px' }} value="combined">Combined</MenuItem>
-            <MenuItem style={{ fontSize: '12px' }} value="income">Income</MenuItem>
-            <MenuItem style={{ fontSize: '12px' }} value="expense">Expense</MenuItem>
-          </Select>
-        </FormControl>
-      </div>
+      {/* <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Select
+          value={isCombined ? 'combined' : 'separated'}
+          onChange={(e) => setIsCombined(e.target.value === 'combined')}
+          variant="outlined"
+          style={{ marginRight: '10px', marginLeft: 'auto' }}
+        >
+          <MenuItem value="combined">Combined</MenuItem>
+          <MenuItem value="separated">Separated</MenuItem>
+        </Select>
+      </div> */}
 
-
-
-
-      <div style={{ display: 'flex', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
-        {selectedTable === 'combined' && (
-          <TableContainer component={Paper} style={{ width: isMobile ? '100%' : '70%', marginBottom: '20px' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Source</TableCell>
-                  <TableCell>Payment Status</TableCell>
-                  
-                  {/* <TableCell>Detail</TableCell> */}
-                  <TableCell>Type</TableCell>
-                  <TableCell>Date Time</TableCell>
-                  {/* <TableCell>Image</TableCell> */}
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Edit</TableCell>
-                   
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {[...incomeDetails, ...expenseDetails].map((data, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{data.title}</TableCell>
-                    <TableCell>{data.source}</TableCell>
-                    {/* <TableCell>{data.paid ? 'Paid' : 'Not Paid'}</TableCell>  */}
-                    <TableCell>
-                      {data.paid ? (
-                        <input
-                          type="checkbox"
-                          checked={true} 
-                          // disabled 
-                        />
-                      ) : (
-                        <input
-                          type="checkbox"
-                          checked={false} 
-                          onChange={(e) => handlePaidChange(e, index)}
-                        />
-                      )}
-                    </TableCell>
-                    {/* <TableCell>{data.detail}</TableCell> */}
-                    <TableCell>{data.type}</TableCell>
-                    <TableCell>{data.time}</TableCell>
-                    {/* <TableCell>
-                      {data.image && (
-                        <div>
-                          <img src={URL.createObjectURL(data.image)} alt="Expense" style={{ width: '100px' }} />
-                          <p>{data.imageDetail}</p>
-                        </div>
-                      )}
-                    </TableCell> */}
-                    <TableCell>{data.amount}</TableCell>
-                    <TableCell>
-                    <IconButton onClick={() => handleEdit(index)}>
-                      <EditIcon />
-                    </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        {selectedTable === 'income' && (
-          <TableContainer component={Paper} style={{ width: isMobile ? '100%' : '70%', marginBottom: '20px' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Income Title</TableCell>
-                  <TableCell>Source of income</TableCell>
-                  <TableCell>Income Amount</TableCell>
-                  <TableCell>Income Detail</TableCell>
-                  <TableCell>Income Time</TableCell>
-                  <TableCell>Edit</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {incomeDetails.map((income, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{income.title}</TableCell>
-                    <TableCell>{income.source}</TableCell>
-                    <TableCell>{income.amount}</TableCell>
-                    <TableCell>{income.detail}</TableCell>
-                    <TableCell>{income.time}</TableCell>
-                    <IconButton onClick={() => handleEdit(index)}>
-                      <EditIcon />
-                    </IconButton>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        {selectedTable === 'expense' && (
-          <TableContainer component={Paper} style={{ width: isMobile ? '100%' : '70%', marginBottom: '20px' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Expense Title</TableCell>
-                  <TableCell>Payment Status</TableCell>
-                  {/* <TableCell>Expense Detail</TableCell> */}
-                  <TableCell>Expense Type</TableCell>
-                  <TableCell>Expense Time</TableCell>
-                  <TableCell>Expense Amount</TableCell>
-                  <TableCell>Edit</TableCell>
-                  {/* <TableCell>Image</TableCell> */}
-                  
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {expenseDetails.map((expense, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{expense.title}</TableCell>
-                    <TableCell>
-                      {expense.paid ? (
-                        <input
-                          type="checkbox"
-                          checked={true} 
-                          // disabled 
-                        />
-                      ) : (
-                        <input
-                          type="checkbox"
-                          checked={false} 
-                          onChange={(e) => handlePaidChange(e, index)}
-                        />
-                      )}
-                    </TableCell>
-                    {/* <TableCell>{expense.detail}</TableCell> */}
-                    <TableCell>{expense.type}</TableCell>
-                    <TableCell>{expense.time}</TableCell>
-                    {/* <TableCell>
-                      {expense.image && (
-                        <div>
-                          <img src={URL.createObjectURL(expense.image)} alt="Expense" style={{ width: '100px' }} />
-                          <p>{expense.imageDetail}</p>
-                        </div>
-                      )}
-                    </TableCell> */}
-                    {/* <TableCell>{expense.paid ? 'Paid' : 'Not Paid'}</TableCell> */}
-                    <TableCell>{expense.amount}</TableCell>
-                    <IconButton onClick={() => handleEdit(index)}>
-                      <EditIcon />
-                    </IconButton>
-                    
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </div>
-
-      <Dialog open={openIncomeDialog} onClose={() => setOpenIncomeDialog(false)}>
-        <DialogTitle>Add Income</DialogTitle>
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>{editingIndex !== null ? 'Edit Data' : (isIncome ? 'Add Income' : 'Add Expense')}</DialogTitle>
         <DialogContent>
-          <TextField 
-            label="Income Title" 
-            variant="outlined"
-            style={{ marginBottom: '10px' }}
-            fullWidth 
-            value={incomeTitle}
-            onChange={handleIncomeTitleChange}
-          />
-          <TextField 
-            label="Source of Income" 
-            variant="outlined" 
-            style={{ marginBottom: '10px' }}
-            fullWidth 
-            value={incomeSource}
-            onChange={handleIncomeSourceChange}
-          />
-          <TextField 
-            label="Amount" 
-            variant="outlined"
-            style={{ marginBottom: '10px' }}
-            type="number" 
-            fullWidth 
-            value={incomeAmount}
-            onChange={handleIncomeAmountChange}
-          />
-          <TextField 
-            label="Income Detail" 
-            variant="outlined"
-            style={{ marginBottom: '10px' }}
-            multiline 
-            rows={4}
-            fullWidth 
-            value={incomeDetail}
-            onChange={handleIncomeDetailChange}
-          />
+          {isIncome ? (
+            <>
+              <TextField label="incomeTitle" value={incomeTitle} onChange={(e) => setincomeTitle(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="SourceOfIncome" value={SourceOfIncome} onChange={(e) => setSourceOfIncome(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="IncomeAmount" type="number" value={IncomeAmount} onChange={(e) => setIncomeAmount(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Detail" value={detail} onChange={(e) => setDetail(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+            </>
+          ) : (
+            <>
+              <TextField label="Title" value={expTitle} onChange={(e) => setexpTitle(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Amount" type="number" value={expAmount} onChange={(e) => setexpAmount(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Detail" value={expDetail} onChange={(e) => setexpDetail(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <Select
+                label="Expense Type"
+                variant="outlined"
+                value={expType}
+                onChange={(e) => setexpType(e.target.value)}
+                fullWidth
+              >
+                <MenuItem value="Bill">Bill</MenuItem>
+                <MenuItem value="Food">Food</MenuItem>
+                <MenuItem value="Purchases">Purchases</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </Select>
+              <FormControlLabel
+                control={<Checkbox checked={status} onChange={(e) => setstatus(e.target.checked)} />}
+                label="status"
+              />
+              <input type="file" accept="image/*" onChange={handleImageChange} />
+              {/* {image && <img src={image} alt="Uploaded" style={{ width: '100%', marginTop: '10px' }} />} */}
+            </>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button variant="outlined" onClick={() => setOpenIncomeDialog(false)} color="primary">
-            Cancel
-          </Button>
-          <Button variant="outlined" onClick={handleSaveIncome} color="primary">
-            Save
-          </Button>
+          <Button onClick={handleClose} color="secondary">Cancel</Button>
+          <Button onClick={handleSave} color="primary">Save</Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={openExpenseDialog} onClose={() => setOpenExpenseDialog(false)}>
-        <DialogTitle>Add Expense</DialogTitle>
-        <DialogContent>
-          <TextField 
-            label="Expense Title" 
-            variant="outlined"
-            style={{ marginBottom: '10px' }}
-            fullWidth 
-            value={expenseTitle}
-            onChange={handleExpenseTitleChange}
-          />
-          <TextField 
-            label="Amount" 
-            variant="outlined"
-            style={{ marginBottom: '10px' }}
-            type="number" 
-            fullWidth 
-            value={expenseAmount}
-            onChange={handleExpenseAmountChange}
-          />
-          <TextField 
-            label="Detail" 
-            variant="outlined"
-            style={{ marginBottom: '10px' }}
-            fullWidth 
-            value={expenseDetail}
-            onChange={handleExpenseDetailChange}
-          />
-          <FormControl>
-            <InputLabel id="expense-type-label">Expense Type</InputLabel>
-            <Select
-              labelId="expense-type-label"
-              variant="outlined"
-              value={expenseType}
-              onChange={handleExpenseTypeChange}
-              style={{ minWidth: 200 }}
-            >
-              {expenseTypeOptions.map((option, index) => (
-                <MenuItem key={index} value={option}>{option}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField 
-            label="Add More Type" 
-            variant="outlined"
-            style={{ marginLeft: '10px', marginRight: '10px' }}
-            value={additionalExpenseType}
-            onChange={handleAdditionalExpenseTypeChange}
-          />
-          <Button variant="outlined" color="primary" onClick={handleAddMoreType} style={{ marginTop: '10px', alignSelf: 'center' }}>Add</Button>
-          <Grid container  alignItems="center">
-            <Checkbox
-              checked={paid}
-              onChange={handlePaidChange}
-              inputProps={{ 'aria-label': 'primary checkbox' }}
-            />
-            <label htmlFor="paid">Paid</label>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button variant="outlined" onClick={() => setOpenExpenseDialog(false)} color="primary">
-            Cancel
-          </Button>
-          <Button variant="outlined" onClick={handleSaveExpense} color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <Dialog open={openImageDialog} onClose={() => setOpenImageDialog(false)}>
-        <DialogTitle>Upload Image</DialogTitle>
-        <DialogContent>
-          <input type="file" onChange={handleImageUpload} />
-          <TextField 
-            label="Image Detail" 
-            variant="outlined"
-            style={{ marginBottom: '10px' }}
-            fullWidth 
-            value={imageDetail}
-            onChange={handleImageDetailChange}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button variant="outlined" onClick={() => setOpenImageDialog(false)} color="primary">
-            Cancel
-          </Button>
-          <Button variant="outlined" onClick={() => { setOpenImageDialog(false); setOpenExpenseDialog(true); }} color="primary">
-            Save and Continue
-          </Button>
-        </DialogActions>
-      </Dialog>
+
+
+      {isCombined ? (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ maxWidth: '800px' }}>
+              <div className="table-container">
+                <Table style={{}}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Income Title</TableCell>
+                      <TableCell>Source Of Income</TableCell>
+                      {/* <TableCell>Income Detail</TableCell> */}
+                      <TableCell>Income Amount</TableCell>
+                      <TableCell>Expense Title</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Expense Type</TableCell>
+                      {/* <TableCell>Expense Detail</TableCell> */}
+                      <TableCell>Date/Time</TableCell>
+                      <TableCell>Expense Amount</TableCell>
+                      <TableCell>Edit</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.map((row, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{row.incomeTitle}</TableCell>
+                        <TableCell>{row.SourceOfIncome}</TableCell>
+                        {/* <TableCell>{row.detail}</TableCell> */}
+                        <TableCell>{row.IncomeAmount}</TableCell>
+                        <TableCell>{row.expTitle}</TableCell>
+                        {/* <TableCell>{row.status ? 'Yes' : 'No'}</TableCell> */}
+                        <TableCell>
+                          <Checkbox checked={row.status} color="primary" />
+                        </TableCell>
+
+                        <TableCell>{row.expType}</TableCell>
+                        {/* <TableCell>{row.expDetail}</TableCell> */}
+                        <TableCell className="hover-date">
+                          {new Date(row.dateTime).toLocaleDateString()}
+                          <span className="hover-time">
+                            {new Date(row.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </TableCell>
+
+                        <TableCell>{row.expAmount}</TableCell>
+                        <TableCell>
+                          <IconButton onClick={() => handleEdit(index)} color="primary">
+                            <EditIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+            </div>
+          </div>
+
+
+        </>
+
+      ) : (
+        <>
+          <div className="table-wrapper">
+            <div className="table-container">
+              <h2 style={{ textAlign: 'left', marginBottom: '10px' }}>Income</h2>
+              <IncomeTable data={data} handleEdit={handleEdit} />
+            </div>
+            <div className="table-container">
+              <h2 style={{ textAlign: 'left', marginBottom: '10px' }}>Expense</h2>
+              <ExpenseTable data={data} handleEdit={handleEdit} />
+            </div>
+          </div>
+        </>
+
+      )}
     </div>
   );
-}
-  
+};
+
 export default App;
