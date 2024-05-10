@@ -20,7 +20,8 @@
 }
 
 .table-container {
-    margin: 20px;
+    margin: 20px 30px;
+    /* background-color: blueviolet; */
 }
 
 .hover-date {

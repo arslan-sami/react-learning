@@ -21,17 +21,19 @@ import {
 import SettingsIcon from '@material-ui/icons/Settings'; // Import settings icon
 import EditIcon from '@material-ui/icons/Edit';
 
+
 import './App.css';
 
 const IncomeTable = ({ data, handleEdit }) => (
   <div className="table-container">
-    <Table>
+    <Table size="small">
       <TableHead>
         <TableRow>
           <TableCell>Title</TableCell>
           <TableCell>Source</TableCell>
+          <TableCell>Type</TableCell>
           {/* <TableCell>Detail</TableCell> */}
-          
+
           <TableCell>Date</TableCell>
           <TableCell>Amount</TableCell>
           <TableCell>Edit</TableCell>
@@ -39,24 +41,34 @@ const IncomeTable = ({ data, handleEdit }) => (
       </TableHead>
       <TableBody>
         {data.map((row, index) => (
-          <TableRow key={index}>
-            <TableCell>{row.incomeTitle}</TableCell>
-            <TableCell>{row.SourceOfIncome}</TableCell>
-            {/* <TableCell>{row.detail}</TableCell> */}
-            <TableCell>{row.IncomeAmount}</TableCell>
-            <TableCell className="hover-date">
-              {new Date(row.dateTime).toLocaleDateString()}
-              <span className="hover-time">
-                {new Date(row.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </TableCell>
-            <TableCell>{row.IncomeAmount}</TableCell>
-            <TableCell>
-              <IconButton onClick={() => handleEdit(index)} color="primary">
-                <EditIcon />
-              </IconButton>
-            </TableCell>
-          </TableRow>
+          row.incomeTitle ? (
+            <>
+              <TableRow key={index}>
+                <TableCell>{row.incomeTitle}</TableCell>
+                <TableCell>{row.SourceOfIncome}</TableCell>
+
+                <TableCell>{row.expType}</TableCell>
+
+
+
+                {/* <TableCell>{row.detail}</TableCell> */}
+                <TableCell className="hover-date">
+                  {new Date(row.dateTime).toLocaleDateString()}
+                  <span className="hover-time">
+                    {new Date(row.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </TableCell>
+                <TableCell>{row.IncomeAmount}</TableCell>
+
+                <TableCell>
+                  <IconButton onClick={() => handleEdit(index, 'income')} color="primary">
+                    <EditIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            </>
+          ) : (<></>)
+
         ))}
       </TableBody>
     </Table>
@@ -66,7 +78,7 @@ const IncomeTable = ({ data, handleEdit }) => (
 
 const ExpenseTable = ({ data, handleEdit }) => (
   <div className="table-container">
-    <Table>
+    <Table size="small">
       <TableHead>
         <TableRow>
           <TableCell>Title</TableCell>
@@ -81,31 +93,27 @@ const ExpenseTable = ({ data, handleEdit }) => (
       </TableHead>
       <TableBody>
         {data.map((row, index) => (
-          <TableRow key={index}>
-            <TableCell>{row.expTitle}</TableCell>
-            <TableCell>
-              <Checkbox checked={row.status} color="primary" disable/>
-            </TableCell>
-            <TableCell>{row.expType}</TableCell>
-            {/* <TableCell>{row.expDetail}</TableCell> */}
-            <TableCell className="hover-date">
-              {new Date(row.dateTime).toLocaleDateString()}
-              <span className="hover-time">
-                {new Date(row.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </TableCell>
-
-            
-            {/* <TableCell>
-              {row.image && <img src={row.image} alt="Uploaded" style={{ width: '80px', height: '100px' }} />}
-            </TableCell> */}
-            <TableCell>{row.expAmount}</TableCell>
-            <TableCell>
-              <IconButton onClick={() => handleEdit(index)} color="primary">
-                <EditIcon />
-              </IconButton>
-            </TableCell>
-          </TableRow>
+          row.expTitle ? (
+            <TableRow key={index}>
+              <TableCell>{row.expTitle}</TableCell>
+              <TableCell>
+                <Checkbox checked={row.status} color="primary" disable />
+              </TableCell>
+              <TableCell>{row.expType}</TableCell>
+              {/* <TableCell>{row.expDetail}</TableCell> */}
+              <TableCell className="hover-date">
+                {new Date(row.dateTime).toLocaleDateString()}
+                <span className="hover-time">
+                  {new Date(row.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </TableCell>
+              <TableCell>{row.expAmount}</TableCell>
+              <TableCell>
+                <IconButton onClick={() => handleEdit(index, 'expense')} color="primary">
+                  <EditIcon />
+                </IconButton>
+              </TableCell>
+            </TableRow>) : (<></>)
         ))}
       </TableBody>
     </Table>
@@ -130,9 +138,7 @@ const App = () => {
   const [isIncome, setIsIncome] = useState(false);
   const [isCombined, setIsCombined] = useState(false);
   const [image, setImage] = useState(null);
-  // Menu State for view options
   const [anchorEl, setAnchorEl] = useState(null);
-  // Nested menu state for view options
   const [nestedAnchorEl, setNestedAnchorEl] = useState(null);
 
   useEffect(() => {
@@ -191,26 +197,28 @@ const App = () => {
     setImage(null);
   };
 
-  const handleEdit = (index) => {
+  const handleEdit = (index, type) => {
     const rowData = data[index];
-    setincomeTitle(rowData.incomeTitle);
-    setSourceOfIncome(rowData.SourceOfIncome);
-    setIncomeAmount(rowData.IncomeAmount.toString());
-    setDetail(rowData.detail);
-    setexpTitle(rowData.expTitle);
-    setexpAmount(rowData.expAmount.toString());
-    setexpDetail(rowData.expDetail);
-    setexpType(rowData.expType);
-    setstatus(rowData.status);
-    setImage(rowData.image);
+    setincomeTitle(rowData.incomeTitle || ''); // Set empty string if undefined
+    setSourceOfIncome(rowData.SourceOfIncome || ''); // Set empty string if undefined
+    setIncomeAmount(rowData.IncomeAmount ? rowData.IncomeAmount.toString() : ''); // Set empty string if undefined
+    setDetail(rowData.detail || ''); // Set empty string if undefined
+    setexpTitle(rowData.expTitle || ''); // Set empty string if undefined
+    setexpAmount(rowData.expAmount ? rowData.expAmount.toString() : ''); // Set empty string if undefined
+    setexpDetail(rowData.expDetail || ''); // Set empty string if undefined
+    setexpType(rowData.expType || ''); // Set empty string if undefined
+    setstatus(rowData.status || false); // Set false if undefined
+    setImage(rowData.image || null); // Set null if undefined
     setEditingIndex(index);
+    setIsIncome(type === 'income'); // Set isIncome state based on the type parameter
     setOpen(true);
   };
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const fileSize = file.size / 1024 / 1024; // in MB
+      const fileSize = file.size / 1024 / 1024;
       if (fileSize <= 2) {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -218,30 +226,23 @@ const App = () => {
         };
         reader.readAsDataURL(file);
       } else {
-        // Notify user about file size limit
         alert("File size exceeds 2 MB limit.");
       }
     }
   };
 
-
-  // Open view options menu
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-  // Close view options menu
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
-  // Close nested view options menu
   const handleNestedMenuClose = () => {
     setNestedAnchorEl(null);
   };
 
-
-  // Open nested view options menu
   const handleNestedMenuOpen = (event) => {
     setNestedAnchorEl(event.currentTarget);
   };
@@ -252,7 +253,7 @@ const App = () => {
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
         <Button variant="contained" color="primary" style={{ margin: '10px 10px' }} onClick={() => { setOpen(true); setIsIncome(false); }}>Add Expense</Button>
         <Button variant="contained" color="secondary" style={{ margin: '10px 10px' }} onClick={() => { setOpen(true); setIsIncome(true); }}>Add Income</Button>
-        {/* Settings icon and dropdown */}
+
         <IconButton onClick={handleMenuOpen}>
           <SettingsIcon />
         </IconButton>
@@ -264,7 +265,7 @@ const App = () => {
           <MenuItem onClick={handleNestedMenuOpen}>View</MenuItem>
         </Menu>
 
-        {/* Nested menu for view options */}
+
         <Menu
           anchorEl={nestedAnchorEl}
           open={Boolean(nestedAnchorEl)}
@@ -277,42 +278,42 @@ const App = () => {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '50px' }}>
         <div style={{ textAlign: 'center', width: '50%' }}>
-          <span style={{ fontSize: '1.2em' }}>{totalIncomeAmount}</span>
+          <span style={{ fontSize: '80px' }}>{totalIncomeAmount}</span>
           <h1 style={{ fontSize: '22px' }}>Balance</h1>
         </div>
         <div style={{ textAlign: 'center', width: '50%' }}>
-          <span style={{ fontSize: '1.2em' }}>{totalexpAmount}</span>
+          <span style={{ fontSize: '80px' }}>{totalexpAmount}</span>
           <h1 style={{ fontSize: '22px' }}>Total Expense</h1>
         </div>
       </div>
-
-      {/* <div style={{ display: 'flex', alignItems: 'center' }}>
-        <Select
-          value={isCombined ? 'combined' : 'separated'}
-          onChange={(e) => setIsCombined(e.target.value === 'combined')}
-          variant="outlined"
-          style={{ marginRight: '10px', marginLeft: 'auto' }}
-        >
-          <MenuItem value="combined">Combined</MenuItem>
-          <MenuItem value="separated">Separated</MenuItem>
-        </Select>
-      </div> */}
 
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>{editingIndex !== null ? 'Edit Data' : (isIncome ? 'Add Income' : 'Add Expense')}</DialogTitle>
         <DialogContent>
           {isIncome ? (
             <>
-              <TextField label="incomeTitle" value={incomeTitle} onChange={(e) => setincomeTitle(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
-              <TextField label="SourceOfIncome" value={SourceOfIncome} onChange={(e) => setSourceOfIncome(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
-              <TextField label="IncomeAmount" type="number" value={IncomeAmount} onChange={(e) => setIncomeAmount(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
-              <TextField label="Detail" value={detail} onChange={(e) => setDetail(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Income Title" value={incomeTitle} onChange={(e) => setincomeTitle(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Source Of Income" value={SourceOfIncome} onChange={(e) => setSourceOfIncome(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Income Amount" type="number" value={IncomeAmount} onChange={(e) => setIncomeAmount(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField multiline maxRows={4} label="Detail" value={detail} onChange={(e) => setDetail(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <Select
+                label="Expense Type"
+                variant="outlined"
+                value={expType}
+                onChange={(e) => setexpType(e.target.value)}
+                fullWidth
+              >
+                <MenuItem value="Bill">Bill</MenuItem>
+                <MenuItem value="Food">Food</MenuItem>
+                <MenuItem value="Purchases">Purchases</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </Select>
             </>
           ) : (
             <>
-              <TextField label="Title" value={expTitle} onChange={(e) => setexpTitle(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
-              <TextField label="Amount" type="number" value={expAmount} onChange={(e) => setexpAmount(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
-              <TextField label="Detail" value={expDetail} onChange={(e) => setexpDetail(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Expense Title" value={expTitle} onChange={(e) => setexpTitle(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Expense Amount" type="number" value={expAmount} onChange={(e) => setexpAmount(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
+              <TextField label="Detail" multiline value={expDetail} onChange={(e) => setexpDetail(e.target.value)} fullWidth variant="outlined" className="input-field" style={{ marginBottom: '10px' }} />
               <Select
                 label="Expense Type"
                 variant="outlined"
@@ -327,7 +328,7 @@ const App = () => {
               </Select>
               <FormControlLabel
                 control={<Checkbox checked={status} onChange={(e) => setstatus(e.target.checked)} />}
-                label="status"
+                label="Paid"
               />
               <input type="file" accept="image/*" onChange={handleImageChange} />
               {/* {image && <img src={image} alt="Uploaded" style={{ width: '100%', marginTop: '10px' }} />} */}
@@ -344,51 +345,46 @@ const App = () => {
       {isCombined ? (
         <>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <div style={{ maxWidth: '800px' }}>
+            <div style={{ minWidth: '800px' }}>
               <div className="table-container">
-                <Table style={{}}>
+                <Table size='small'>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Income Title</TableCell>
-                      <TableCell>Source Of Income</TableCell>
-                      {/* <TableCell>Income Detail</TableCell> */}
-                      <TableCell>Income Amount</TableCell>
-                      <TableCell>Expense Title</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Expense Type</TableCell>
+                      <TableCell>Title</TableCell>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Source/Status</TableCell>
+                      <TableCell>Type</TableCell>
+                      {/* <TableCell>Detail</TableCell> */}
+                      <TableCell>Date</TableCell>
+                      <TableCell>Amount</TableCell>
                       {/* <TableCell>Expense Detail</TableCell> */}
-                      <TableCell>Date/Time</TableCell>
-                      <TableCell>Expense Amount</TableCell>
+                      {/* <TableCell>Expense Amount</TableCell> */}
                       <TableCell>Edit</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {data.map((row, index) => (
                       <TableRow key={index}>
-                        <TableCell>{row.incomeTitle}</TableCell>
-                        <TableCell>{row.SourceOfIncome}</TableCell>
-                        {/* <TableCell>{row.detail}</TableCell> */}
-                        <TableCell>{row.IncomeAmount}</TableCell>
-                        <TableCell>{row.expTitle}</TableCell>
-                        {/* <TableCell>{row.status ? 'Yes' : 'No'}</TableCell> */}
-                        <TableCell>
-                          <Checkbox checked={row.status} color="primary" />
-                        </TableCell>
-
+                        {row.incomeTitle ? (<TableCell>{row.incomeTitle}</TableCell>) : (<TableCell>{row.expTitle}</TableCell>)}
+                        <TableCell>{row.incomeTitle ? "Income" : "Expense"}</TableCell>
+                        {row.incomeTitle ? (<TableCell>{row.SourceOfIncome}</TableCell>) : (<TableCell><Checkbox checked={row.status} color="primary" /></TableCell>)}
                         <TableCell>{row.expType}</TableCell>
-                        {/* <TableCell>{row.expDetail}</TableCell> */}
+                        {/* {detail ? ( <TableCell>{row.detail}</TableCell> ) : (<TableCell>{row.expDetail}</TableCell>) } */}
                         <TableCell className="hover-date">
                           {new Date(row.dateTime).toLocaleDateString()}
                           <span className="hover-time">
                             {new Date(row.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </TableCell>
-
-                        <TableCell>{row.expAmount}</TableCell>
+                        <TableCell>{row.incomeTitle ? row.IncomeAmount : row.expAmount}</TableCell>
                         <TableCell>
-                          <IconButton onClick={() => handleEdit(index)} color="primary">
+                          <IconButton onClick={() => handleEdit(index, row.incomeTitle ? 'income' : 'expense')} color="primary">
                             <EditIcon />
                           </IconButton>
+                          {/* <IconButton onClick={() => handleEdit(index, 'expense')} color="primary">
+                            <EditIcon />
+                          </IconButton> */}
+
                         </TableCell>
                       </TableRow>
                     ))}
@@ -398,10 +394,7 @@ const App = () => {
 
             </div>
           </div>
-
-
         </>
-
       ) : (
         <>
           <div className="table-wrapper">
